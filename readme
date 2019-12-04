@@ -1,0 +1,4 @@
+Classifer.cpp 是一个独立的pin插件,实现对指定的地址进行插桩,监控测试用例是否执行到插桩位置.通过config.json读取参数.
+congfig.json 指定插桩位置格式"sloti":"nodName!offset"(i必须连续).与pin位于同一目录下.
+inputFilter.cpp configParser.cpp configParser.h 通过make编译.调用pin Classifer.so 对种子批量进行测试.通过if-config.json读取参数.
+

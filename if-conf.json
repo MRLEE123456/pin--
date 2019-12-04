@@ -1,0 +1,9 @@
+{
+
+    "fnameSub"      : true,
+    "argStr"        : "@@",
+    "targetProgram" : "./test-programs/simple-uaf0-noFILE/simple-uaf0-noFILE",
+    "pindir"        : "./pin-3.10-97971-gc5e41af74-gcc-linux",
+    "seeddir"       : "./test",
+    "verifieddir"   : "./tmp"
+}
