@@ -18,7 +18,7 @@ public:
     std::string m_pindir;
     std::string m_seeddir;
     std::string m_verifieddir;
-
+    std::string m_arch;
     ConfigParser(std::string fileName);
 
     ~ConfigParser();
@@ -34,6 +34,8 @@ public:
     std::string get_verifieddir();
     
     std::string get_argStr();
+   
+    std::string get_arch();
 
     bool get_fnameSub();
 };

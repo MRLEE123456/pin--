@@ -90,7 +90,15 @@ bool ConfigParser::parseConfigFile()
 	{
 	    return false;
 	}
-
+        
+        if (dom.HasMember("arch") && dom["arch"].IsString()) 
+	{
+	    m_arch = dom["arch"].GetString();
+	}
+	else
+	{
+	    return false;
+	}
 	return true;
     }
 
@@ -126,6 +134,10 @@ std::string ConfigParser::get_argStr()
     return m_argStr;
 }
 
+std::string ConfigParser::get_arch()
+{
+    return  m_arch;
+}
     
 bool ConfigParser::get_fnameSub()
 {

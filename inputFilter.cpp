@@ -84,6 +84,10 @@ char * get_one_file_name(char* dirPath)
  */
 int main(int argc,char *argv[])
 {
+    char cwd_buf[1024];
+    getcwd(cwd_buf, 1024);
+    printf("cwd = %s\n", cwd_buf);
+   
     ConfigParser * cfg_parser = new ConfigParser("./if-conf.json");
     if ( !cfg_parser->parseConfigFile() )
     {
@@ -105,11 +109,15 @@ int main(int argc,char *argv[])
 
     std::string argStr = cfg_parser->get_argStr();
     printf("argStr = %s\n", argStr.c_str());
+    
+    std::string arch=cfg_parser->get_arch();
+    printf("arch = %s\n", arch.c_str());
 
     bool fnameSub = cfg_parser->get_fnameSub();
 
     char * fileName = NULL;
-
+    std::string tmpDir = pinDir + "/tmp";
+    printf("tmpDir = %s\n", tmpDir.c_str());
     std::stringstream ss;
 
     std::string cmd_pin; 
@@ -117,19 +125,27 @@ int main(int argc,char *argv[])
 
     while (1)
     {
-	fileName = get_one_file_name( (char *)(seedDir.c_str()) );
+	fileName = get_one_file_name( (char *)(tmpDir.c_str()) );
 	if (fileName == NULL)
 	{
 	    break;
 	}
 	std::string strFileName = fileName;
 	//std::string strVerifiedFileName = verifiedDir + "/" + strFileName; 
-	strFileName = seedDir + "/" + strFileName;
+	strFileName = pinDir + "/tmp/" + strFileName;
 
 	// synthesize the PIN command
 	ss.str("");
-	ss << pinDir << "/pin -t " << pinDir << "/source/tools/MyPinTool/obj-intel64/Classifier.so -- ";
+
+        if(arch=="x64")
+	    ss << pinDir << "/pin -t " << pinDir << "/source/tools/InputClassifier/obj-intel64/InputClassifier.so -- ";
+        else
+	    ss << pinDir << "/pin -t " << pinDir << "/source/tools/InputClassifier/obj-ia32/InputClassifier.so -- ";
+
 	ss << exe << " " << argStr;
+
+	printf("inputFilter: pincmd = %s\n", ss.str().c_str());
+
 	cmd_pin = ss.str();
 	ss.str("");
 	//ss.clear();
@@ -147,42 +163,77 @@ int main(int argc,char *argv[])
 	system(cmd_pin.c_str());
 
 	// classify the input
-        ifstream in("classifier.out");
-        string subdirname;
-        if(in) // 有该文件
+        ifstream in_f("classifier_fun.out");
+        ifstream in_p("classifier_point.out");
+        string subdirname_f;
+	string subdirname_p;
+        if(in_f) // 有该文件
         {
-          while (getline (in, subdirname)) // line中不包括每行的换行符
+          while (getline (in_f, subdirname_f)) // line中不包括每行的换行符
           { 
-             cout << subdirname << endl;
+             cout << subdirname_f << endl;
              ss.str("");
-             ss << verifiedDir << "/" <<subdirname;
+             ss << verifiedDir << "/fun/" <<subdirname_f;
              cout<< ss.str()<<endl;
              if(access(ss.str().c_str(),F_OK)!=0)
              {
                 ss.str("");
-                ss << "mkdir " << verifiedDir << "/" <<subdirname; 
+                ss << "mkdir " << verifiedDir << "/fun/" <<subdirname_f; 
 	        std::string cmd_mkdir = ss.str(); 
                 cout<< cmd_mkdir<<endl;
 	        system(cmd_mkdir.c_str());
 	        ss.clear();
              }
-             string desFileName=verifiedDir+ "/"+ subdirname+ "/"+fileName;
+             //移动到verified目录
+             string verifiedFilename=verifiedDir+"/"+fileName;
+	         copy(strFileName.c_str(),verifiedFilename.c_str());
+             //移动到verified/fun目录
+             string desFileName=verifiedDir+ "/fun/"+ subdirname_f+ "/"+fileName;
             // cout<< strFileName<<endl<<desFileName<<endl;
-             copy(strFileName.c_str(),desFileName.c_str());
-/*
-             ss.str("");
-             ss << "cp " << strFileName << " " << verifiedDir<< "/"<< subdirname<< "/"; 
-	     std::string cmd_copy = ss.str(); 
-             cout<< cmd_copy<<endl;
-	     system(cmd_copy.c_str());
-	     ss.clear();
-    */         
+             copy(strFileName.c_str(),desFileName.c_str());         
           }
         }
         else // 没有该文件
         {
-              cout <<"no such file" << endl;
+              cout <<"no such file: classifier_fun.out" << endl;
         }
+	 if(in_p) // 有该文件
+        {
+          while (getline (in_p, subdirname_p)) // line中不包括每行的换行符
+          { 
+             cout << subdirname_p << endl;
+             ss.str("");
+             ss << verifiedDir << "/point/" <<subdirname_p;
+             cout<< ss.str()<<endl;
+             if(access(ss.str().c_str(),F_OK)!=0)
+             {
+                ss.str("");
+                ss << "mkdir " << verifiedDir << "/point/" <<subdirname_p; 
+	        std::string cmd_mkdir = ss.str(); 
+                cout<< cmd_mkdir<<endl;
+	        system(cmd_mkdir.c_str());
+	        ss.clear();
+             }
+             //移动到verified目录
+             string verifiedFilename=verifiedDir+"/"+fileName;
+	         copy(strFileName.c_str(),verifiedFilename.c_str());
+             //移动到verified/fun目录
+             string desFileName=verifiedDir+ "/point/"+ subdirname_p+ "/"+fileName;
+            // cout<< strFileName<<endl<<desFileName<<endl;
+             copy(strFileName.c_str(),desFileName.c_str());         
+          }
+        }
+        else // 没有该文件
+        {
+              cout <<"no such file: classifier_point.out" << endl;
+        }
+	//将被测用例移动到指定文件
+	string allFileName=seedDir+"/"+fileName;
+	copy(strFileName.c_str(),allFileName.c_str());
+	//删除被测文件
+	string cmd_rm="rm "+strFileName;
+	//printf("cmd_rm : %s",cmd_rm.c_str());
+	system(cmd_rm.c_str());
 	
     }// end of while{1}
 
